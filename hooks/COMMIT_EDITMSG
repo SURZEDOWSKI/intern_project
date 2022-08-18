@@ -1,14 +1,15 @@
-test(all hooks): testing all hooks
+test(all-hooks): this commit follows the rules!
 
 # Please enter the commit message for your changes. Lines starting
 # with '#' will be ignored, and an empty message aborts the commit.
 #
 # On branch bugfix/readme-update
-# Your branch is ahead of 'origin/bugfix/readme-update' by 6 commits.
+# Your branch is ahead of 'origin/bugfix/readme-update' by 9 commits.
 #   (use "git push" to publish your local commits)
 #
 # Changes to be committed:
-#	new file:   hooks/COMMIT_EDITMSG
-#	new file:   hooks/commit-msg.py
-#	modified:   hooks/pre-commit.py
+#	modified:   hooks/commit-msg.py
+#
+# Changes not staged for commit:
+#	modified:   hooks/COMMIT_EDITMSG
 #

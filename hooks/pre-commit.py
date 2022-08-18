@@ -4,18 +4,13 @@ import subprocess
 import sys
 import re
 
-def branch_name():
-	bashCommand = "git rev-parse --abbrev-ref HEAD"
-	process = subprocess.check_output(bashCommand)
-	return process
-
-branch = str(branch_name())
+branch = subprocess.check_output(['git', 'symbolic-ref', '--short', 'HEAD']).strip()
+branch = str(branch)
 
 ptrn = re.compile("^b'(major|feature|bugfix|hotfix)\/*")
 
 if ptrn.match(branch):
-	print(branch, " fits pattern")
-	sys.exit(0)
+	print(branch, "follows branch naming rules")
 else:
-	print("wrong branch name")
+	print(branch, "doesn't follow branch naming rules")
 	sys.exit(1)

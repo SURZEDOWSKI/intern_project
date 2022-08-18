@@ -4,7 +4,7 @@ reg = "^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\(([\w
 msg = "\nregex rule commit message must follow, so it looks like this:\n<type>(scope optional): <description>"
 
 
-with open(r"C:\\Users\\surzedow\\Desktop\\python_tasks\\szymon-urzedowski\\.git\\COMMIT_EDITMSG", 'r+') as f:
+with open(r".\\hooks\\COMMIT_EDITMSG", 'r+') as f:
         content = f.read()
         f.seek(0, 0)
         f.write("%s %s \n%s" % (reg, msg, content))

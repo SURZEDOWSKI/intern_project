@@ -1,7 +1,6 @@
 #!/usr/bin/python
-
-import re
 import sys
+import re
 
 ptrn = re.compile("^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\(([\w\-.]+)\))?(!)?: ([\w ])+([\s\S]*)")
 

@@ -1,16 +1,14 @@
-test(idk): another test of pcm
+test(all hooks): testing all hooks
 
 # Please enter the commit message for your changes. Lines starting
 # with '#' will be ignored, and an empty message aborts the commit.
 #
 # On branch bugfix/readme-update
-# Your branch is ahead of 'origin/bugfix/readme-update' by 5 commits.
+# Your branch is ahead of 'origin/bugfix/readme-update' by 6 commits.
 #   (use "git push" to publish your local commits)
 #
 # Changes to be committed:
-#	modified:   hooks/prepare-commit-msg.py
-#
-# Untracked files:
-#	hooks/COMMIT_EDITMSG
-#	hooks/commit-msg.py
+#	new file:   hooks/COMMIT_EDITMSG
+#	new file:   hooks/commit-msg.py
+#	modified:   hooks/pre-commit.py
 #

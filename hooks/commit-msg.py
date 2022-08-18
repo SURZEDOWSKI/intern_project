@@ -7,6 +7,6 @@ ptrn = re.compile("^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|tes
 with open(r"COMMIT_EDITMSG", 'r+') as f:
         msg = f.readline()
         print(msg)
-        if not ptrn.match(msg):
-	        print("message doesn't follow rules")
-	        sys.exit(1)
+if not ptrn.match(msg):
+    print("message doesn't follow rules")
+    sys.exit(1)

@@ -15,6 +15,7 @@ ptrn = re.compile("^b'(major|feature|bugfix|hotfix)\/*")
 
 if ptrn.match(branch):
 	print(branch, " fits pattern")
+	sys.exit(0)
 else:
 	print("wrong branch name")
-	sys.exit(0)
+	sys.exit(1)

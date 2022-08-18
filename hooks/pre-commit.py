@@ -9,8 +9,6 @@ branch = str(branch)
 
 ptrn = re.compile("^b'(major|feature|bugfix|hotfix)\/*")
 
-if ptrn.match(branch):
-	print(branch, "follows branch naming rules")
-else:
+if not ptrn.match(branch):
 	print(branch, "doesn't follow branch naming rules")
-	sys.exit(1)
+	sys.exit(1)	

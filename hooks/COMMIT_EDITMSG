@@ -1,15 +1,12 @@
-test(all-hooks): this commit follows the rules!
+test(commit-msg): file is symlinked to .git 
 
 # Please enter the commit message for your changes. Lines starting
 # with '#' will be ignored, and an empty message aborts the commit.
 #
 # On branch bugfix/readme-update
-# Your branch is ahead of 'origin/bugfix/readme-update' by 9 commits.
+# Your branch is ahead of 'origin/bugfix/readme-update' by 10 commits.
 #   (use "git push" to publish your local commits)
 #
 # Changes to be committed:
-#	modified:   hooks/commit-msg.py
-#
-# Changes not staged for commit:
 #	modified:   hooks/COMMIT_EDITMSG
 #

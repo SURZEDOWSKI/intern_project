@@ -239,6 +239,9 @@ components:
         country:
           type: string
           example: Poland
+        dateOfBirth:
+          type: string
+          example: '06.08.1999'
         firstName:
           type: string
           example: Szymon
@@ -263,6 +266,9 @@ components:
         country:
           type: string
           example: Poland
+        dateOfBirth:
+          type: string
+          example: '06.08.1999'
         firstName:
           type: string
           example: Szymon

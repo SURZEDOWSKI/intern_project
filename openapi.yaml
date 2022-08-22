@@ -1,0 +1,283 @@
+openapi: 3.0.3
+info:
+  title: Design API for the Users Service
+  description: |-
+    User Stories:
+
+    - As a User, I want to be able to create new account
+    - As a User, I want to be able to get my account information
+    - As a User, I want to be able to update my account
+    - As a User, I want to be able to remove my account
+    - As an Admin, I want to be able to search and filter users accounts by id, nickname, email (mutually exclusive).
+    
+    User entity:
+    
+    - Country
+    - Date of Birth
+    - First Name
+    - Last Name
+    - Nickname
+    - Gender
+    - Email
+    
+    API should be committed as *.yaml file in OpenAPI standard.
+  version: 1.0.11
+tags:
+  - name: users
+    description: Operations about user
+paths:
+  /users:
+    post:
+      tags:
+        - users
+      summary: Create user
+      description: 'Create new user'
+      operationId: createUser
+      requestBody:
+        description: Create user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNoId'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Supplied invalid data
+        '503':
+          description: Service unavailable
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      summary: Get user info
+      description: 'Get user info'
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          description: ID of user to return
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: User not found
+        '503':
+          description: Service unavailable
+    put:
+      tags:
+        - users
+      summary: Edit user's info
+      description: 'Edit user info'
+      operationId: editUserById
+      parameters:
+        - name: userId
+          in: path
+          description: ID of user to return
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        description: Create user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNoId'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: User not found
+        '503':
+          description: Service unavailable
+    delete:
+      tags:
+        - users
+      summary: Delete user
+      operationId: deleteUserById
+      parameters:
+        - name: userId
+          in: path
+          description: ID of user to return
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid ID supplied
+        '503':
+          description: Service unavailable
+  /users/findUsersById:
+    get:
+      tags:
+        - users
+      summary: Finds users by Id
+      description: 'Find users by Id'
+      operationId: findUserById
+      parameters:
+        - name: id
+          in: query
+          description: ids to be searched for
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: User not found
+        '503':
+          description: Service unavailable
+  /users/findUsersByNickname:
+    get:
+      tags:
+        - users
+      summary: Finds users by Nickname
+      description: 'Find users by Nickname'
+      operationId: findUserByNickname
+      parameters:
+        - name: nickname
+          in: query
+          description: nicknames to be searched for
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid Nickname supplied
+        '404':
+          description: User not found
+        '503':
+          description: Service unavailable
+  /users/findUsersByEmail:
+    get:
+      tags:
+        - users
+      summary: Finds users by Email
+      description: 'Find users by Email'
+      operationId: findUserByEmail
+      parameters:
+        - name: email
+          in: query
+          description: emails to be searched for
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid Email supplied
+        '404':
+          description: User not found
+        '503':
+          description: Service unavailable  
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        country:
+          type: string
+          example: Poland
+        firstName:
+          type: string
+          example: Szymon
+        lastName:
+          type: string
+          example: Urzedowski
+        nickname:
+          type: string
+          example: Wazon
+        gedner:
+          type: string
+          example: male
+          enum:
+            - male
+            - female
+        email:
+          type: string
+          example: szymonurzedowski@mail.com
+    UserNoId:
+      type: object
+      properties:
+        country:
+          type: string
+          example: Poland
+        firstName:
+          type: string
+          example: Szymon
+        lastName:
+          type: string
+          example: Urzedowski
+        nickname:
+          type: string
+          example: Wazon
+        gedner:
+          type: string
+          example: male
+          enum:
+            - male
+            - female
+        email:
+          type: string
+          example: szymonurzedowski@mail.com

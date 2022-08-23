@@ -22,6 +22,9 @@ info:
     
     API should be committed as *.yaml file in OpenAPI standard.
   version: 1.0.0
+servers:
+  - url: https://userservice.swagger.io/api/
+basepath: /v1.0.0
 tags:
   - name: users
     description: Operations about user
@@ -136,36 +139,30 @@ paths:
       description: 'Find users by Id, Nickname or Email'
       operationId: findUser
       parameters:
-      - in: query
-        name: ids
-        description: One or more IDs
-        required: false
-        schema:
-          type: array
-          items:
-            type: integer
-        style: form
-        explode: false
-      - in: query
-        name: nicknames
-        description: One or more nicknames
-        required: false
-        schema:
-          type: array
-          items:
-            type: string
-        style: form
-        explode: false
-      - in: query
-        name: emails
-        description: One or more emails
-        required: false
-        schema:
-          type: array
-          items:
-            type: string
-        style: form
-        explode: false
+        - in: query
+          name: filter
+          required: true
+          style: form
+          explode: true
+          allowReserved: true
+          schema:
+            type: object
+            properties:
+              ids:
+                type: array
+                items:
+                  type: integer
+              nicknames:
+                type: array
+                items:
+                  type: string
+              emails:
+                type: array
+                items:
+                  type: string
+            minProperties: 1
+            maxProperties: 1
+            additionalProperties: false
       responses:
         '200':
           description: successful operation

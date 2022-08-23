@@ -21,7 +21,7 @@ info:
     - Email
     
     API should be committed as *.yaml file in OpenAPI standard.
-  version: 1.0.11
+  version: 1.0.0
 tags:
   - name: users
     description: Operations about user
@@ -124,31 +124,48 @@ paths:
       responses:
         '200':
           description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
         '400':
           description: Invalid ID supplied
         '503':
           description: Service unavailable
-  /users/findUsersById:
+  /users/findUser:
     get:
       tags:
         - users
-      summary: Finds users by Id
-      description: 'Find users by Id'
-      operationId: findUserById
+      summary: Finds users by Id, Nickname or Email
+      description: 'Find users by Id, Nickname or Email'
+      operationId: findUser
       parameters:
-        - name: id
-          in: query
-          description: ids to be searched for
-          required: true
-          explode: true
-          schema:
-            type: array
-            items:
-              type: string
+      - in: query
+        name: ids
+        description: One or more IDs
+        required: false
+        schema:
+          type: array
+          items:
+            type: integer
+        style: form
+        explode: false
+      - in: query
+        name: nicknames
+        description: One or more nicknames
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: false
+      - in: query
+        name: emails
+        description: One or more emails
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: false
       responses:
         '200':
           description: successful operation
@@ -164,70 +181,6 @@ paths:
           description: User not found
         '503':
           description: Service unavailable
-  /users/findUsersByNickname:
-    get:
-      tags:
-        - users
-      summary: Finds users by Nickname
-      description: 'Find users by Nickname'
-      operationId: findUserByNickname
-      parameters:
-        - name: nickname
-          in: query
-          description: nicknames to be searched for
-          required: true
-          explode: true
-          schema:
-            type: array
-            items:
-              type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-        '400':
-          description: Invalid Nickname supplied
-        '404':
-          description: User not found
-        '503':
-          description: Service unavailable
-  /users/findUsersByEmail:
-    get:
-      tags:
-        - users
-      summary: Finds users by Email
-      description: 'Find users by Email'
-      operationId: findUserByEmail
-      parameters:
-        - name: email
-          in: query
-          description: emails to be searched for
-          required: true
-          explode: true
-          schema:
-            type: array
-            items:
-              type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-        '400':
-          description: Invalid Email supplied
-        '404':
-          description: User not found
-        '503':
-          description: Service unavailable  
 components:
   schemas:
     User:
@@ -241,7 +194,8 @@ components:
           example: Poland
         dateOfBirth:
           type: string
-          example: '06.08.1999'
+          example: '1999-08-06'
+          format: date
         firstName:
           type: string
           example: Szymon

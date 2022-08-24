@@ -1,0 +1,240 @@
+openapi: 3.0.3
+info:
+  title: Design API for the Users Service
+  description: |-
+    User Stories:
+
+    - As a User, I want to be able to create new account
+    - As a User, I want to be able to get my account information
+    - As a User, I want to be able to update my account
+    - As a User, I want to be able to remove my account
+    - As an Admin, I want to be able to search and filter users accounts by id, nickname, email (mutually exclusive).
+    
+    User entity:
+    
+    - Country
+    - Date of Birth
+    - First Name
+    - Last Name
+    - Nickname
+    - Gender
+    - Email
+    
+    API should be committed as *.yaml file in OpenAPI standard.
+  version: 1.0.0
+servers:
+  - url: https://userservice.swagger.io/api/
+basepath: /v1.0.0
+tags:
+  - name: users
+    description: Operations about user
+paths:
+  /users:
+    post:
+      tags:
+        - users
+      summary: Create user
+      description: 'Create new user'
+      operationId: createUser
+      requestBody:
+        description: Create user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNoId'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Supplied invalid data
+        '503':
+          description: Service unavailable
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      summary: Get user info
+      description: 'Get user info'
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          description: ID of user to return
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: User not found
+        '503':
+          description: Service unavailable
+    put:
+      tags:
+        - users
+      summary: Edit user's info
+      description: 'Edit user info'
+      operationId: editUserById
+      parameters:
+        - name: userId
+          in: path
+          description: ID of user to return
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        description: Create user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNoId'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: User not found
+        '503':
+          description: Service unavailable
+    delete:
+      tags:
+        - users
+      summary: Delete user
+      operationId: deleteUserById
+      parameters:
+        - name: userId
+          in: path
+          description: ID of user to return
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: Invalid ID supplied
+        '503':
+          description: Service unavailable
+  /users/findUser:
+    get:
+      tags:
+        - users
+      summary: Finds users by Id, Nickname or Email
+      description: 'Find users by Id, Nickname or Email'
+      operationId: findUser
+      parameters:
+        - in: query
+          name: filter
+          required: true
+          style: form
+          explode: true
+          allowReserved: true
+          schema:
+            type: object
+            properties:
+              ids:
+                type: array
+                items:
+                  type: integer
+              nicknames:
+                type: array
+                items:
+                  type: string
+              emails:
+                type: array
+                items:
+                  type: string
+            minProperties: 1
+            maxProperties: 1
+            additionalProperties: false
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: User not found
+        '503':
+          description: Service unavailable
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        country:
+          type: string
+          example: Poland
+        dateOfBirth:
+          type: string
+          example: '1999-08-06'
+          format: date
+        firstName:
+          type: string
+          example: Szymon
+        lastName:
+          type: string
+          example: Urzedowski
+        nickname:
+          type: string
+          example: Wazon
+        gedner:
+          type: string
+          example: male
+          enum:
+            - male
+            - female
+        email:
+          type: string
+          example: szymonurzedowski@mail.com
+    UserNoId:
+      type: object
+      properties:
+        country:
+          type: string
+          example: Poland
+        dateOfBirth:
+          type: string
+          example: '06.08.1999'
+        firstName:
+          type: string
+          example: Szymon
+        lastName:
+          type: string
+          example: Urzedowski
+        nickname:
+          type: string
+          example: Wazon
+        gedner:
+          type: string
+          example: male
+          enum:
+            - male
+            - female
+        email:
+          type: string
+          example: szymonurzedowski@mail.com

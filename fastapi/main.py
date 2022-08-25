@@ -1,7 +1,9 @@
-from typing import Union
-from fastapi import FastAPI
+from email.policy import default
+from typing import Union, List
+from fastapi import FastAPI, status, HTTPException, Query
 from pydantic import BaseModel
 import json
+from fastapi.responses import JSONResponse
 
 usrList = []
 
@@ -29,9 +31,22 @@ def usrEdit(ID, country, dateOfBirth, firstName, lastName, nickname, gender, ema
     usrList[ID].gender = gender
     usrList[ID].email = email
 
+def deleteUsr(ID):
+    usrList.pop(ID)
+
 def findUserById(ID):
     for x in range(len(usrList)):
         if usrList[x].id == ID:
+            return x
+
+def findUserByNickname(nickname):
+    for x in range(len(usrList)):
+        if usrList[x].nickname == nickname:
+            return x
+
+def findUserByEmail(email):
+    for x in range(len(usrList)):
+        if usrList[x].email == email:
             return x 
 
 
@@ -54,35 +69,85 @@ class UserWithoutId(BaseModel):
     gender: str
     email: str
 
+class Message(BaseModel):
+    message: str
+
 app =FastAPI()
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
-@app.get('/users/{userId}')
+@app.get('/v1/users')
+async def find_user(userId: List[int] | None = Query(default=None), nickname: str | None = None, email: str | None = None):
+    if userId == None and nickname == None and email == None:
+        if len(usrList) != 0:
+            return usrList
+        else:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"There are no users!"})
+    elif userId != None and nickname == None and email == None:
+        foundUsrList = []
+        for i in range(len(userId)):
+            ID = findUserById(userId[i])
+            foundUsrList.append(usrList[ID].__dict__)
+        if len(foundUsrList) != 0:
+            return foundUsrList
+        else:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
+    elif userId == None and nickname != None and email == None:
+        ID = findUserByNickname(nickname)
+        if ID:
+            return usrList[ID].__dict__
+        else:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found!")
+    elif userId == None and nickname == None and email != None:
+        ID = findUserByEmail(email)
+        if ID:
+            return usrList[ID].__dict__
+        else:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found!")
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="too many parameters passed!")
+    
+@app.get('/v1/users/{userId}', response_model=User, responses={status.HTTP_404_NOT_FOUND: {"model": Message}})
 async def get_user(userId: int):
-    x = findUserById(userId)
-    return usrList[x].__dict__
+    ID = findUserById(userId)
+    if ID != None:
+        return usrList[ID].__dict__
+    else:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "User not found!"})
 
-@app.put('/users/{userId}', response_model=User)
+@app.put('/v1/users/{userId}', response_model=User, responses={status.HTTP_404_NOT_FOUND: {"model": Message}})
 async def edit_user(userId: int, user: UserWithoutId):
-    x = findUserById(userId)
-    y = user.__dict__
-    usrEdit(x, y["country"], y["dateOfBirth"], y["firstName"], y["lastName"], y["nickname"], y["gender"], y["email"])
-    msg = usrList[x]
-    return msg.__dict__
+    ID = findUserById(userId)
+    if ID != None:
+        y = user.__dict__
+        usrEdit(ID, y["country"], y["dateOfBirth"], y["firstName"], y["lastName"], y["nickname"], y["gender"], y["email"])
+        msg = usrList[ID]
+        return msg.__dict__
+    else:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "User not found!"})
 
-@app.post('/users', response_model=User)
+@app.delete('/v1/users/{userId}',
+    responses={status.HTTP_200_OK: {"model": Message},
+               status.HTTP_404_NOT_FOUND: {"model": Message}})
+async def delete_user(userId: int):
+    ID = findUserById(userId)
+    if ID != None:
+        deleteUsr(ID)
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Sucessfully deleted user!"})
+    else:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "User not found!"})
+
+@app.post('/v1/users', response_model=User, status_code=status.HTTP_200_OK)
 async def create_user(user: UserWithoutId):
     usrCreate(user.country, user.dateOfBirth, user.firstName, user.lastName, user.nickname, user.gender, user.email)
     msg = usrList[len(usrList)-1]
     return msg.__dict__
 
-usrCreate("PL", "1999-08-06", "Szymon", "Urzedowski", "Wazon", "male", "uzi166@gmail.com")
-print(len(usrList))
-
-
+usrCreate("PL", "1999-08-06", "Szymon", "Urzedowski", "Wazon", "male", "wazon@gmail.com")
+usrCreate("PL", "1990-08-06", "Paweł", "Nowak", "Nowy", "male", "nowy@gmail.com")
+usrCreate("PL", "1995-08-06", "Anna", "Kowalska", "Ania", "female", "ania@gmail.com")
 
 {
   "id": 1,

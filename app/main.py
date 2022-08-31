@@ -1,6 +1,28 @@
 from typing import List
 from fastapi import FastAPI, status, HTTPException, Query
-import schemas
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    id: int
+    country: str
+    dateOfBirth: str
+    firstName: str
+    lastName: str
+    nickname: str
+    gender: str
+    email: str
+
+
+class UserWithoutId(BaseModel):
+    country: str
+    dateOfBirth: str
+    firstName: str
+    lastName: str
+    nickname: str
+    gender: str
+    email: str
+
 
 usr_list = []
 
@@ -50,13 +72,21 @@ def find_usr_by_id(ID):
 
 
 def find_usr_by_nickname(nickname):
+    found_list = []
+    for x in range(len(usr_list)):
+        if usr_list[x].nickname.startswith(nickname):
+            found_list.append(usr_list[x].__dict__)
+    if len(found_list) != 0:
+        return found_list
+
+"""def find_usr_by_nickname(nickname):
     found_usr_list = []
     for x in range(len(usr_list)):
         if usr_list[x].nickname.startswith(nickname):
             found_usr_list.append(x)
     if len(found_usr_list) != 0:
         return found_usr_list
-
+"""
 
 def find_usr_by_email(email):
     found_usr_list = []
@@ -119,20 +149,27 @@ async def find_user(
             temp_found_usr_list = []
             for i in range(len(user_id)):
                 ID = find_usr_by_id(user_id[i])
-                temp_found_usr_list.append(usr_list[ID].__dict__)
+                if ID != None:
+                    temp_found_usr_list.append(usr_list[ID].__dict__)
             if len(temp_found_usr_list) != 0:
                 return temp_found_usr_list
             else:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         elif nickname != None:
-            ID = find_usr_by_nickname(nickname)
-            if ID != None:
-                found_usr_list = []
-                for i in range(len(ID)):
-                    found_usr_list.append(usr_list[ID[i]])
-                return found_usr_list
+            user_ids_list = find_usr_by_nickname(nickname)
+            if user_ids_list != None:
+                return user_ids_list
             else:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+            """elif nickname != None:    
+                ID = find_usr_by_nickname(nickname)
+                if ID != None:
+                    found_usr_list = []
+                    for i in range(len(ID)):
+                        found_usr_list.append(usr_list[ID[i]])
+                    return found_usr_list
+                else:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)"""
         elif email != None:
             ID = find_usr_by_email(email)
             if ID != None:
@@ -146,7 +183,7 @@ async def find_user(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
 
-@app.get("/v1/users/{user_id}", response_model=schemas.User, responses=resp)
+@app.get("/v1/users/{user_id}", response_model=User, responses=resp)
 async def get_user(user_id: int):
     ID = find_usr_by_id(user_id)
     if ID != None:
@@ -155,8 +192,8 @@ async def get_user(user_id: int):
         raise HTTPException(status.HTTP_404_NOT_FOUND)
 
 
-@app.put("/v1/users/{user_id}", response_model=schemas.User, responses=resp)
-async def edit_user(user_id: int, user: schemas.UserWithoutId):
+@app.put("/v1/users/{user_id}", response_model=User, responses=resp)
+async def edit_user(user_id: int, user: UserWithoutId):
     ID = find_usr_by_id(user_id)
     if ID != None:
         y = user.__dict__
@@ -188,10 +225,10 @@ async def delete_user(user_id: int):
 
 @app.post(
     "/v1/users",
-    response_model=schemas.User,
+    response_model=User,
     responses=remove_response(status.HTTP_404_NOT_FOUND),
 )
-async def create_user(user: schemas.UserWithoutId):
+async def create_user(user: UserWithoutId):
     usr_create(
         user.country,
         user.dateOfBirth,
@@ -208,6 +245,7 @@ async def create_user(user: schemas.UserWithoutId):
 usr_create("PL", "1999-08-06", "Szymon", "Urzedowski", "Wazon", "male", "wazon@gmail.com")
 usr_create("PL", "1990-08-06", "Paweł", "Nowak", "Nowy", "male", "nowy@gmail.com")
 usr_create("PL", "1995-08-06", "Anna", "Kowalska", "Ania", "female", "ania@gmail.com")
+
 
 """
     {

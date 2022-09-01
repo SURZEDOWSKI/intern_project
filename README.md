@@ -7,6 +7,12 @@
 - Code review
 - Merge
 
+##### Task 4:
+- [x] Created **test_main.py** in *.\szymon-urzedowski\fastapi\tests*
+    - [x] Created unit tests for app and coverd 99%, for some cases applied parametrized tests
+- [x] Fixed some bugs in searching
+- [x] Used **python black** to format code in clearer way
+
 ##### Task 3:
 - [x] Created **main.py** in directory *.\szymon-urzedowski\fastapi*
     - [x] API Users Service is an application to manage users identities. It allows to create, get, filter, update and delete users accounts.

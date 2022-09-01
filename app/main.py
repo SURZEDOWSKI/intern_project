@@ -79,22 +79,14 @@ def find_usr_by_nickname(nickname):
     if len(found_list) != 0:
         return found_list
 
-"""def find_usr_by_nickname(nickname):
-    found_usr_list = []
-    for x in range(len(usr_list)):
-        if usr_list[x].nickname.startswith(nickname):
-            found_usr_list.append(x)
-    if len(found_usr_list) != 0:
-        return found_usr_list
-"""
 
 def find_usr_by_email(email):
-    found_usr_list = []
+    found_list = []
     for x in range(len(usr_list)):
         if usr_list[x].email.startswith(email):
-            found_usr_list.append(x)
-    if len(found_usr_list) != 0:
-        return found_usr_list
+            found_list.append(usr_list[x].__dict__)
+    if len(found_list) != 0:
+        return found_list
 
 
 def remove_response(key):
@@ -161,22 +153,10 @@ async def find_user(
                 return user_ids_list
             else:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-            """elif nickname != None:    
-                ID = find_usr_by_nickname(nickname)
-                if ID != None:
-                    found_usr_list = []
-                    for i in range(len(ID)):
-                        found_usr_list.append(usr_list[ID[i]])
-                    return found_usr_list
-                else:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)"""
         elif email != None:
-            ID = find_usr_by_email(email)
-            if ID != None:
-                found_usr_list = []
-                for i in range(len(ID)):
-                    found_usr_list.append(usr_list[ID[i]])
-                return found_usr_list
+            user_ids_list = find_usr_by_email(email)
+            if user_ids_list != None:
+                return user_ids_list
             else:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     else:

@@ -7,6 +7,10 @@
 - Code review
 - Merge
 
+
+##### Task 5:
+- [x] Used **Poetry** to create **pyproject.toml** and **poetry.lock** in *.\szymon-urzedowski* with virtual environment dependencies
+
 ##### Task 4:
 - [x] Created **test_main.py** in *.\szymon-urzedowski\fastapi\tests*
     - [x] Created unit tests for app and coverd 99%, for some cases applied parametrized tests

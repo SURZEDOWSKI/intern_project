@@ -4,8 +4,8 @@ import pytest
 
 client = TestClient(app)
 
+
 user1 = {
-    "id": 1,
     "country": "PL",
     "dateOfBirth": "1999-08-06",
     "firstName": "Szymon",
@@ -16,15 +16,46 @@ user1 = {
 }
 
 
+user2 = {
+    "country": "PL",
+    "dateOfBirth": "1990-08-06",
+    "firstName": "Paweł",
+    "lastName": "Nowak",
+    "nickname": "Nowy",
+    "gender": "male",
+    "email": "nowy@gmail.com",
+}
+
+
+user3 = {
+    "country": "PL",
+    "dateOfBirth": "1995-08-06",
+    "firstName": "Anna",
+    "lastName": "Kowalska",
+    "nickname": "Ania",
+    "gender": "female",
+    "email": "ania@gmail.com",
+}
+
+
+def create_users():
+    client.post("/v1/users", json=user1)
+    client.post("/v1/users", json=user2)
+    client.post("/v1/users", json=user3)
+
+create_users()
+
 def test_get_user():
     response = client.get("/v1/users/1")
     assert response.status_code == 200
-    assert response.json() == user1
+    out = {"id": 1}
+    out.update(user1)
+    assert response.json() == out
 
 
 def test_get_user_out_of_index():
     response = client.get("/v1/users/5")
-    assert response.status_code != 200
+    assert response.status_code == 404
 
 
 new_user = {

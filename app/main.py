@@ -222,9 +222,9 @@ async def create_user(user: UserWithoutId):
     return msg.__dict__
 
 
-usr_create("PL", "1999-08-06", "Szymon", "Urzedowski", "Wazon", "male", "wazon@gmail.com")
-usr_create("PL", "1990-08-06", "Paweł", "Nowak", "Nowy", "male", "nowy@gmail.com")
-usr_create("PL", "1995-08-06", "Anna", "Kowalska", "Ania", "female", "ania@gmail.com")
+#usr_create("PL", "1999-08-06", "Szymon", "Urzedowski", "Wazon", "male", "wazon@gmail.com")
+#usr_create("PL", "1990-08-06", "Paweł", "Nowak", "Nowy", "male", "nowy@gmail.com")
+#usr_create("PL", "1995-08-06", "Anna", "Kowalska", "Ania", "female", "ania@gmail.com")
 
 
 """

@@ -4,7 +4,7 @@ RUN pip install poetry
 
 WORKDIR /container_app
 
-COPY . /container_app
+COPY /app /container_app
 
 RUN poetry config virtualenvs.create false && poetry install
 

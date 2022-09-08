@@ -2,9 +2,9 @@ FROM python:latest
 
 RUN pip install poetry
 
-WORKDIR /container_app
+WORKDIR /app
 
-COPY /app /container_app
+COPY /app /app
 
 RUN poetry config virtualenvs.create false && poetry install
 

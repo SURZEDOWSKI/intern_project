@@ -1,0 +1,17 @@
+FROM python:latest
+
+RUN pip install poetry
+
+WORKDIR /app
+
+COPY /app /app
+
+RUN poetry config virtualenvs.create false && poetry install
+
+CMD ["pytest"]
+
+#build:
+#docker build -t test_image -f dockerfile_test .
+
+#run:
+#docker run -t -d --name test_cont test_image

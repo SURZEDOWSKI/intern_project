@@ -1,0 +1,7 @@
+version: "3"
+services:
+  Users:
+    image: my_fastapi
+    build: ./dockerfile
+    ports:
+      - "8000:80"

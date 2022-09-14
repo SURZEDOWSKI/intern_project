@@ -1,7 +1,42 @@
 version: "3"
 services:
   Users:
+    container_name: Users_Service
     image: my_fastapi
-    build: ./dockerfile
+    build: 
+      dockerfile: Dockerfile
+    depends_on:
+      - Postgres
+    networks:
+      - my_network
     ports:
       - "8000:80"
+      
+  Postgres:
+    container_name: postgres
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: postgres_db
+    networks:
+      - my_network
+    ports:
+      - "5432:5432"
+      
+  #PGAdmin:
+  #  container_name: pgadmin
+  #  image: dpage/pgadmin4
+  #  restart: always
+  #  environment:
+  #    PGADMIN_DEFAULT_EMAIL: root@root.com
+  #    PGADMIN_DEFAULT_PASSWORD: pass
+  #  networks:
+  #    - my_network
+  #  ports:
+  #    - "5050:80"
+networks:
+  my_network:
+    name: my_network
+    driver: bridge

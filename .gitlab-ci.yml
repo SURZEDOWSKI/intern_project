@@ -17,6 +17,7 @@ test:
     #- pip install poetry
     #- cd app
     #- poetry config virtualenvs.create false && poetry install
+    - while ! nc -z docker 2375; do sleep 0.1; done # Wait until docker socket is available
     - sleep 30 && docker build --pull -t my_fastapi .
     - docker-compose up -d
     - pytest tests

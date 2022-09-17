@@ -2,14 +2,15 @@ stages:
   - test
 
 variables:
-  DOCKER_HOST: tcp://localhost:2375
+  DOCKER_HOST: tcp://docker:2375
 
 test:
   stage: test
   image: docker:stable
   services:
-  - name: docker:19-dind
-    command: ["--tls=false"]
+  - name: docker:dind
+    entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]
+  
 
   variables: 
     DOCKER_TLS_CERTDIR: "/certs"
@@ -17,8 +18,7 @@ test:
     #- pip install poetry
     #- cd app
     #- poetry config virtualenvs.create false && poetry install
-    - while ! nc -z localhost 2375; do sleep 0.1; done # Wait until docker socket is available
-    - docker build --pull -t my_fastapi .
+    - export DOCKER_HOST=tcp://127.0.0.1:2375 && docker build --pull -t my_fastapi .
     - docker-compose up -d
     - pytest tests
     - docker-compose down

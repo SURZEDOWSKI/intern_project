@@ -1,15 +1,32 @@
-from typing import List
+from typing import List, Optional
 from fastapi import FastAPI, status, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:pass@localhost:5432/postgres"
+from sqlmodel import SQLModel, create_engine, Field, Session, select, delete
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
-class User(BaseModel):
+class User(SQLModel, table=True):
+
+    __tablename__ = "users"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    country: str
+    dateOfBirth: str
+    firstName: str
+    lastName: str
+    nickname: str = Field(index=True)
+    gender: str
+    email: str = Field(index=True)
+
+class UserWithoutId(SQLModel):
+    country: str
+    dateOfBirth: str
+    firstName: str
+    lastName: str
+    nickname: str
+    gender: str
+    email: str
+
+class UserRead(SQLModel):
     id: int
     country: str
     dateOfBirth: str
@@ -20,85 +37,15 @@ class User(BaseModel):
     email: str
 
 
-class UserWithoutId(BaseModel):
-    country: str
-    dateOfBirth: str
-    firstName: str
-    lastName: str
-    nickname: str
-    gender: str
-    email: str
+#connection_string = "postgresql://postgres:pass@172.17.0.3:5432/postgres"
+connection_string = "postgresql://postgres:pass@Postgres:5432/postgres"
 
+engine = create_engine(connection_string, echo=True)
 
-usr_list = []
+print(engine)
 
-
-class Usr:
-    def __init__(
-        self, id, country, dateOfBirth, firstName, lastName, nickname, gender, email
-    ):
-        self.id = id
-        self.country = country
-        self.dateOfBirth = dateOfBirth
-        self.firstName = firstName
-        self.lastName = lastName
-        self.nickname = nickname
-        self.gender = gender
-        self.email = email
-
-
-def usr_create(country, dateOfBirth, firstName, lastName, nickname, gender, email):
-    if len(usr_list) == 0:
-        new_id = 1
-    else:
-        new_id = usr_list[-1].id + 1
-    usr_list.append(
-        Usr(new_id, country, dateOfBirth, firstName, lastName, nickname, gender, email)
-    )
-
-
-def usr_edit(ID, country, dateOfBirth, firstName, lastName, nickname, gender, email):
-    usr_list[ID].country = country
-    usr_list[ID].dateOfBirth = dateOfBirth
-    usr_list[ID].firstName = firstName
-    usr_list[ID].lastName = lastName
-    usr_list[ID].nickname = nickname
-    usr_list[ID].gender = gender
-    usr_list[ID].email = email
-
-
-def usr_delete(ID):
-    usr_list.pop(ID)
-
-
-def find_usr_by_id(ID):
-    for x in range(len(usr_list)):
-        if usr_list[x].id == ID:
-            return x
-
-
-def find_usr_by_nickname(nickname):
-    found_list = []
-    for x in range(len(usr_list)):
-        if usr_list[x].nickname.startswith(nickname):
-            found_list.append(usr_list[x].__dict__)
-    if len(found_list) != 0:
-        return found_list
-
-
-def find_usr_by_email(email):
-    found_list = []
-    for x in range(len(usr_list)):
-        if usr_list[x].email.startswith(email):
-            found_list.append(usr_list[x].__dict__)
-    if len(found_list) != 0:
-        return found_list
-
-
-def remove_response(key):
-    r = dict(resp)
-    del r[key]
-    return r
+def create_tables():
+    SQLModel.metadata.create_all(engine)
 
 
 def num_of_params(*args):
@@ -108,6 +55,27 @@ def num_of_params(*args):
         if x != None:
             count = count + 1
     return count
+
+
+
+def remove_response(key):
+    r = dict(resp)
+    del r[key]
+    return r
+
+
+def create_users():
+    user_1 = User(country="PL", dateOfBirth="1999.08.06", firstName="Szymon", lastName="Urzedowski", nickname="Wazon", gender="male", email="szymon@gmail.com")
+    user_2 = User(country="US", dateOfBirth="1990.08.10", firstName="John", lastName="Smith", nickname="Jonny", gender="male", email="john@gmail.com")
+    user_3 = User(country="UK", dateOfBirth="2000.08.19", firstName="Scott", lastName="Looker", nickname="Scotty", gender="male", email="scott@gmail.com")
+
+    with Session(engine) as session:
+
+        session.add(user_1)
+        session.add(user_2)
+        session.add(user_3)
+
+        session.commit()
 
 
 resp = {
@@ -124,9 +92,88 @@ app = FastAPI(
     description="Users Service is an application to manage users identities :) It allows to create, get, filter, update and delete users accounts."
 )
 
-# @app.get("/")
-# def read_root():
-#    return {"Hello": "World"}
+
+@app.on_event("startup")
+async def on_startup():
+    with Session(engine) as session:
+        #statement = delete(User)
+        #result = session.exec(statement)
+        #session.commit()
+        create_tables()
+        #users = session.exec(statement = select(User).where(User.id==1)).first()
+        #if users == None:
+        #    create_users()
+
+
+@app.on_event("shutdown")
+def on_shutdown():
+    with Session(engine) as session:
+        statement = delete(User)
+        result = session.exec(statement)
+        session.commit()
+
+
+
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
+
+
+@app.post(
+    "/v1/users",
+    response_model=UserRead,
+    responses=remove_response(status.HTTP_404_NOT_FOUND),
+)
+async def create_user(user: UserWithoutId):
+    with Session(engine) as session:
+        db_user = User.from_orm(user)
+        session.add(db_user)
+        session.commit()
+        session.refresh(db_user)
+        return db_user
+
+
+@app.get("/v1/users/{user_id}", response_model=UserRead, responses=resp)
+async def get_user(user_id: int):
+    with Session(engine) as session:
+        users = session.exec(statement = select(User).where(User.id==user_id)).first()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        print(users)
+    return users
+
+
+@app.put("/v1/users/{user_id}", response_model=UserRead, responses=resp)
+async def edit_user(user_id: int, user: UserWithoutId):
+    with Session(engine) as session:
+        users = session.exec(statement = select(User).where(User.id==user_id)).first()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        print(users)
+
+        users.country = user.country
+        users.dateOfBirth = user.dateOfBirth
+        users.firstName = user.firstName
+        users.lastName = user.lastName
+        users.nickname = user.nickname
+        users.gender = user.gender
+        users.email = user.email
+
+        session.add(users)
+        session.commit()
+        session.refresh(users)
+    return users
+
+
+@app.delete("/v1/users/{user_id}", responses=resp)
+async def delete_user(user_id: int):
+    with Session(engine) as session:
+        users = session.exec(statement = select(User).where(User.id==user_id)).first()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        session.delete(users)
+        session.commit()
+        raise HTTPException(status.HTTP_200_OK)
 
 
 @app.get("/v1/users", responses=resp)
@@ -135,113 +182,40 @@ async def find_user(
     nickname: str | None = None,
     email: str | None = None,
 ):
-    parameters = num_of_params(user_id, nickname, email)
-
-    if parameters == 0:
-        if len(usr_list) != 0:
-            return usr_list
+    with Session(engine) as session:
+        parameters = num_of_params(user_id, nickname, email)
+        if parameters == 0:
+            users = session.exec(statement = select(User).order_by(User.id)).all()
+            if not users:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+            return users
+        elif parameters == 1:
+            if user_id != None:
+                statement = "SELECT * FROM users WHERE id in ("
+                statement +=', '.join(str(i) for i in user_id)
+                statement += ")"
+                users = session.exec(statement).all()
+                if not users:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+                return users
+            elif nickname != None:
+                statement = "SELECT * FROM users WHERE nickname LIKE '"
+                statement += nickname
+                statement += "%'"
+                users = session.exec(statement).all()
+                if not users:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+                return users
+            elif email != None:
+                statement = "SELECT * FROM users WHERE email LIKE '"
+                statement += email
+                statement += "%'"
+                users = session.exec(statement).all()
+                if not users:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+                return users
+            else:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
         else:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    elif parameters == 1:
-        if user_id != None:
-            temp_found_usr_list = []
-            for i in range(len(user_id)):
-                ID = find_usr_by_id(user_id[i])
-                if ID != None:
-                    temp_found_usr_list.append(usr_list[ID].__dict__)
-            if len(temp_found_usr_list) != 0:
-                return temp_found_usr_list
-            else:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-        elif nickname != None:
-            user_ids_list = find_usr_by_nickname(nickname)
-            if user_ids_list != None:
-                return user_ids_list
-            else:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-        elif email != None:
-            user_ids_list = find_usr_by_email(email)
-            if user_ids_list != None:
-                return user_ids_list
-            else:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-
-
-@app.get("/v1/users/{user_id}", response_model=User, responses=resp)
-async def get_user(user_id: int):
-    ID = find_usr_by_id(user_id)
-    if ID != None:
-        return usr_list[ID].__dict__
-    else:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
-
-
-@app.put("/v1/users/{user_id}", response_model=User, responses=resp)
-async def edit_user(user_id: int, user: UserWithoutId):
-    ID = find_usr_by_id(user_id)
-    if ID != None:
-        y = user.__dict__
-        usr_edit(
-            ID,
-            y["country"],
-            y["dateOfBirth"],
-            y["firstName"],
-            y["lastName"],
-            y["nickname"],
-            y["gender"],
-            y["email"],
-        )
-        msg = usr_list[ID]
-        return msg.__dict__
-    else:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
-
-
-@app.delete("/v1/users/{user_id}", responses=resp)
-async def delete_user(user_id: int):
-    ID = find_usr_by_id(user_id)
-    if ID != None:
-        usr_delete(ID)
-        raise HTTPException(status.HTTP_200_OK)
-    else:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
-
-
-@app.post(
-    "/v1/users",
-    response_model=User,
-    responses=remove_response(status.HTTP_404_NOT_FOUND),
-)
-async def create_user(user: UserWithoutId):
-    usr_create(
-        user.country,
-        user.dateOfBirth,
-        user.firstName,
-        user.lastName,
-        user.nickname,
-        user.gender,
-        user.email,
-    )
-    msg = usr_list[len(usr_list) - 1]
-    return msg.__dict__
-
-
-#usr_create("PL", "1999-08-06", "Szymon", "Urzedowski", "Wazon", "male", "wazon@gmail.com")
-#usr_create("PL", "1990-08-06", "Paweł", "Nowak", "Nowy", "male", "nowy@gmail.com")
-#usr_create("PL", "1995-08-06", "Anna", "Kowalska", "Ania", "female", "ania@gmail.com")
-
-
-"""
-    {
-    "id": 1,
-    "country": "PL",
-    "dateOfBirth": "1999-08-06",
-    "firstName": "Szymon",
-    "lastName": "Urzedowski",
-    "nickname": "Wazon",
-    "gender": "male",
-    "email": "uzi1662@gmail.com"
-    }
-"""
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+               

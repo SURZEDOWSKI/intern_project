@@ -1,6 +1,9 @@
 from fastapi.testclient import TestClient
-from app.main import app
+from app.main import app, create_users, connection_string
+from sqlmodel import create_engine, SQLModel, Session
+from sqlmodel.pool import StaticPool
 import pytest
+
 
 client = TestClient(app)
 

@@ -1,19 +1,13 @@
 stages:
-  - docker_build
   - test
-
-docker_build:
-  stage: docker_build
-  script:
-    - docker pull postgres
-    - docker-compose up
 
 test:
   stage: test
   image: python:latest
   script:
-    - pip install poetry
-    - cd app
-    - poetry config virtualenvs.create false && poetry install
+    #- pip install poetry
+    #- cd app
+    #- poetry config virtualenvs.create false && poetry install
+    - docker-compose up -d
     - pytest tests
     - docker-compose down

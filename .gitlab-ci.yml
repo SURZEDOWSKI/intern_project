@@ -8,7 +8,7 @@ test:
   stage: test
   image: docker:stable
   services:
-  - name: docker:dind
+  - name: docker:19-dind
     command: ["--tls=false"]
 
   variables: 

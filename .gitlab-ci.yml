@@ -8,7 +8,8 @@ test:
   stage: test
   image: docker:20.10.18
   services:
-    - docker:20.10.18-dind
+    - name: docker:20.10.18-dind
+      entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]
   variables: 
     DOCKER_TLS_CERTDIR: "/certs"
   script:

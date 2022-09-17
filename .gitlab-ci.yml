@@ -6,7 +6,9 @@ variables:
 
 test:
   stage: test
-  image: docker:stable
+  image:
+      name: docker/compose:latest
+      entrypoint: ["/bin/sh", "-c"]
   services:
   - name: docker:dind
     entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]

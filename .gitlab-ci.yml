@@ -10,6 +10,7 @@ test:
     #- pip install poetry
     #- cd app
     #- poetry config virtualenvs.create false && poetry install
+    - docker build -t my_fastapi -f Dockerfile .
     - docker-compose up -d
     - pytest tests
     - docker-compose down

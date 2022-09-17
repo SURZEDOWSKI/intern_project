@@ -6,9 +6,11 @@ variables:
 
 test:
   stage: test
-  image:
-      name: docker/compose:latest
-      entrypoint: ["/bin/sh", "-c"]
+  image: docker:latest
+  services:
+    - docker:latest-dind
+  variables: 
+    DOCKER_TLS_CERTDIR: "/certs"
   script:
     #- pip install poetry
     #- cd app

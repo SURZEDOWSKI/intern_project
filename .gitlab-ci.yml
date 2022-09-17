@@ -12,8 +12,8 @@ test:
     entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]
   
 
-  variables: 
-    DOCKER_TLS_CERTDIR: "/certs"
+  #variables: 
+  #  DOCKER_TLS_CERTDIR: "/certs"
   script:
     #- pip install poetry
     #- cd app

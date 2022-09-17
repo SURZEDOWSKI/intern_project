@@ -9,4 +9,5 @@ test:
     - pip install poetry
     - cd app
     - poetry config virtualenvs.create false && poetry install
+    - docker-compose up
     - pytest tests

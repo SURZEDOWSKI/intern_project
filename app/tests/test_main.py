@@ -113,7 +113,7 @@ def test_edit_user_out_of_index():
 
 def test_edit_user_missing_query_argument():
     response = client.put(
-        "/v1/users/5",
+        "/v1/users/4",
         json={
             "country": "string",
             "dateOfBirth": "string",

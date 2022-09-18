@@ -99,6 +99,36 @@ def create_users():
         session.commit()
 
 
+def get_user_by_nickname(nickname):
+    with Session(engine) as session:
+        statement = "SELECT * FROM users WHERE nickname LIKE '"
+        statement += nickname
+        statement += "%'"
+        users = session.exec(statement).all()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        return users
+
+
+def get_user_by_email(email):
+    with Session(engine) as session:
+        statement = "SELECT * FROM users WHERE email LIKE '"
+        statement += email
+        statement += "%'"
+        users = session.exec(statement).all()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        return users
+
+
+def get_all_users():
+    with Session(engine) as session:
+        users = session.exec(statement=select(User).order_by(User.id)).all()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        return users
+
+
 resp = {
     status.HTTP_200_OK: {},
     status.HTTP_400_BAD_REQUEST: {},
@@ -189,36 +219,6 @@ def get_users_by_id(user_id):
         statement += ", ".join(str(i) for i in user_id)
         statement += ")"
         users = session.exec(statement).all()
-        if not users:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-        return users
-
-
-def get_user_by_nickname(nickname):
-    with Session(engine) as session:
-        statement = "SELECT * FROM users WHERE nickname LIKE '"
-        statement += nickname
-        statement += "%'"
-        users = session.exec(statement).all()
-        if not users:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-        return users
-
-
-def get_user_by_email(email):
-    with Session(engine) as session:
-        statement = "SELECT * FROM users WHERE email LIKE '"
-        statement += email
-        statement += "%'"
-        users = session.exec(statement).all()
-        if not users:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-        return users
-
-
-def get_all_users():
-    with Session(engine) as session:
-        users = session.exec(statement=select(User).order_by(User.id)).all()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         return users

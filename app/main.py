@@ -37,8 +37,8 @@ class UserRead(SQLModel):
     email: str
 
 
-connection_string = "postgresql://postgres:pass@Postgres:5432/postgres"
-#connection_string = "postgresql://postgres:pass@docker:5432/postgres"
+#connection_string = "postgresql://postgres:pass@Postgres:5432/postgres"
+connection_string = "postgresql://postgres:pass@docker:5432/postgres"
 
 engine = create_engine(connection_string, echo=True)
 

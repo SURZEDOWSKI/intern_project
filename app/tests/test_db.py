@@ -11,7 +11,7 @@ def test_db_connection():
     with Session(engine) as session:
         conn = psycopg2.connect(dbname="postgres",
                         user="postgres",
-                        host="127.0.0.1",
+                        host="docker",
                         password="pass",
                         port="5432")
         cursor = conn.cursor()

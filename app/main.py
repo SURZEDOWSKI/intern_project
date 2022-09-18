@@ -5,10 +5,7 @@ from pydantic import BaseModel
 from sqlmodel import SQLModel, create_engine, Field, Session, select, delete
 
 
-class User(SQLModel, table=True):
-
-    __tablename__ = "users"
-    id: Optional[int] = Field(default=None, primary_key=True)
+class UserWithoutId(SQLModel):
     country: str
     dateOfBirth: str
     firstName: str
@@ -17,33 +14,33 @@ class User(SQLModel, table=True):
     gender: str
     email: str = Field(index=True)
 
-class UserWithoutId(SQLModel):
-    country: str
-    dateOfBirth: str
-    firstName: str
-    lastName: str
-    nickname: str
-    gender: str
-    email: str
 
-class UserRead(SQLModel):
+class User(UserWithoutId, table=True):
+
+    __tablename__ = "users"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nickname: str = Field(index=True)
+    email: str = Field(index=True)
+
+
+class UserRead(UserWithoutId):
     id: int
-    country: str
-    dateOfBirth: str
-    firstName: str
-    lastName: str
-    nickname: str
-    gender: str
-    email: str
 
 
-#connection_string = "postgresql://postgres:pass@Postgres:5432/postgres"
-#connection_string = "postgresql://postgres:pass@docker:5432/postgres"
-connection_string = "postgresql://postgres:pass@172.18.0.2:5432/postgres"
+class UserUpdate(UserWithoutId):
+    country: Optional[str] = None
+    dateOfBirth: Optional[str] = None
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    nickname: Optional[str] = None
+    gender: Optional[str] = None
+    email: Optional[str] = None
+
+
+connection_string = "postgresql://postgres:pass@172.18.0.2:5432/postgres"  # use Postgres:5432 to run localy
 
 engine = create_engine(connection_string, echo=True)
 
-print(engine)
 
 def create_tables():
     SQLModel.metadata.create_all(engine)
@@ -58,7 +55,6 @@ def num_of_params(*args):
     return count
 
 
-
 def remove_response(key):
     r = dict(resp)
     del r[key]
@@ -66,9 +62,33 @@ def remove_response(key):
 
 
 def create_users():
-    user_1 = User(country="PL", dateOfBirth="1999.08.06", firstName="Szymon", lastName="Urzedowski", nickname="Wazon", gender="male", email="szymon@gmail.com")
-    user_2 = User(country="US", dateOfBirth="1990.08.10", firstName="John", lastName="Smith", nickname="Jonny", gender="male", email="john@gmail.com")
-    user_3 = User(country="UK", dateOfBirth="2000.08.19", firstName="Scott", lastName="Looker", nickname="Scotty", gender="male", email="scott@gmail.com")
+    user_1 = User(
+        country="PL",
+        dateOfBirth="1999.08.06",
+        firstName="Szymon",
+        lastName="Urzedowski",
+        nickname="Wazon",
+        gender="male",
+        email="szymon@gmail.com",
+    )
+    user_2 = User(
+        country="US",
+        dateOfBirth="1990.08.10",
+        firstName="John",
+        lastName="Smith",
+        nickname="Jonny",
+        gender="male",
+        email="john@gmail.com",
+    )
+    user_3 = User(
+        country="UK",
+        dateOfBirth="2000.08.19",
+        firstName="Scott",
+        lastName="Looker",
+        nickname="Scotty",
+        gender="male",
+        email="scott@gmail.com",
+    )
 
     with Session(engine) as session:
 
@@ -97,13 +117,7 @@ app = FastAPI(
 @app.on_event("startup")
 async def on_startup():
     with Session(engine) as session:
-        #statement = delete(User)
-        #result = session.exec(statement)
-        #session.commit()
         create_tables()
-        #users = session.exec(statement = select(User).where(User.id==1)).first()
-        #if users == None:
-        #    create_users()
 
 
 @app.on_event("shutdown")
@@ -112,7 +126,6 @@ def on_shutdown():
         statement = delete(User)
         result = session.exec(statement)
         session.commit()
-
 
 
 @app.get("/")
@@ -137,7 +150,7 @@ async def create_user(user: UserWithoutId):
 @app.get("/v1/users/{user_id}", response_model=UserRead, responses=resp)
 async def get_user(user_id: int):
     with Session(engine) as session:
-        users = session.exec(statement = select(User).where(User.id==user_id)).first()
+        users = session.exec(statement=select(User).where(User.id == user_id)).first()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         print(users)
@@ -145,36 +158,70 @@ async def get_user(user_id: int):
 
 
 @app.put("/v1/users/{user_id}", response_model=UserRead, responses=resp)
-async def edit_user(user_id: int, user: UserWithoutId):
+async def edit_user(user_id: int, user: UserUpdate):
     with Session(engine) as session:
-        users = session.exec(statement = select(User).where(User.id==user_id)).first()
-        if not users:
+        db_user = session.get(User, user_id)
+        if not db_user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-        print(users)
-
-        users.country = user.country
-        users.dateOfBirth = user.dateOfBirth
-        users.firstName = user.firstName
-        users.lastName = user.lastName
-        users.nickname = user.nickname
-        users.gender = user.gender
-        users.email = user.email
-
-        session.add(users)
+        user_data = user.dict(exclude_unset=True)
+        for key, value in user_data.items():
+            setattr(db_user, key, value)
+        session.add(db_user)
         session.commit()
-        session.refresh(users)
-    return users
+        session.refresh(db_user)
+        return db_user
 
 
 @app.delete("/v1/users/{user_id}", responses=resp)
 async def delete_user(user_id: int):
     with Session(engine) as session:
-        users = session.exec(statement = select(User).where(User.id==user_id)).first()
+        users = session.exec(statement=select(User).where(User.id == user_id)).first()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         session.delete(users)
         session.commit()
         raise HTTPException(status.HTTP_200_OK)
+
+
+def get_users_by_id(user_id):
+    with Session(engine) as session:
+        statement = "SELECT * FROM users WHERE id in ("
+        statement += ", ".join(str(i) for i in user_id)
+        statement += ")"
+        users = session.exec(statement).all()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        return users
+
+
+def get_user_by_nickname(nickname):
+    with Session(engine) as session:
+        statement = "SELECT * FROM users WHERE nickname LIKE '"
+        statement += nickname
+        statement += "%'"
+        users = session.exec(statement).all()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        return users
+
+
+def get_user_by_email(email):
+    with Session(engine) as session:
+        statement = "SELECT * FROM users WHERE email LIKE '"
+        statement += email
+        statement += "%'"
+        users = session.exec(statement).all()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        return users
+
+
+def get_all_users():
+    with Session(engine) as session:
+        users = session.exec(statement=select(User).order_by(User.id)).all()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        return users
 
 
 @app.get("/v1/users", responses=resp)
@@ -183,40 +230,21 @@ async def find_user(
     nickname: str | None = None,
     email: str | None = None,
 ):
-    with Session(engine) as session:
-        parameters = num_of_params(user_id, nickname, email)
-        if parameters == 0:
-            users = session.exec(statement = select(User).order_by(User.id)).all()
-            if not users:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    parameters = num_of_params(user_id, nickname, email)
+    if parameters == 0:
+        users = get_all_users()
+        return users
+    elif parameters == 1:
+        if user_id != None:
+            users = get_users_by_id(user_id)
             return users
-        elif parameters == 1:
-            if user_id != None:
-                statement = "SELECT * FROM users WHERE id in ("
-                statement +=', '.join(str(i) for i in user_id)
-                statement += ")"
-                users = session.exec(statement).all()
-                if not users:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-                return users
-            elif nickname != None:
-                statement = "SELECT * FROM users WHERE nickname LIKE '"
-                statement += nickname
-                statement += "%'"
-                users = session.exec(statement).all()
-                if not users:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-                return users
-            elif email != None:
-                statement = "SELECT * FROM users WHERE email LIKE '"
-                statement += email
-                statement += "%'"
-                users = session.exec(statement).all()
-                if not users:
-                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-                return users
-            else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        elif nickname != None:
+            users = get_user_by_nickname(nickname)
+            return users
+        elif email != None:
+            users = get_user_by_email(email)
+            return users
         else:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-               
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)

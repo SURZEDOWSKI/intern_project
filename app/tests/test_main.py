@@ -1,7 +1,5 @@
 from fastapi.testclient import TestClient
-from app.main import app, create_users, connection_string
-from sqlmodel import create_engine, SQLModel, Session
-from sqlmodel.pool import StaticPool
+from app.main import app, create_users
 import pytest
 
 
@@ -46,7 +44,9 @@ def create_users():
     client.post("/v1/users", json=user2)
     client.post("/v1/users", json=user3)
 
+
 create_users()
+
 
 def test_get_user():
     response = client.get("/v1/users/1")

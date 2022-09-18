@@ -23,6 +23,7 @@ test:
     - export DOCKER_HOST=tcp://docker:2375 && docker build -t my_fastapi -f dockerfile .
     - docker-compose up -d
     - docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' Users_Service
+    - docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' postgres
     - sleep 5
     - docker exec Users_Service pytest tests
     - docker-compose down

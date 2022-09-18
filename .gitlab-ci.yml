@@ -22,6 +22,6 @@ test:
     #- poetry config virtualenvs.create false && poetry install
     - export DOCKER_HOST=tcp://docker:2375 && docker build -t my_fastapi -f dockerfile .
     - docker-compose up -d
-    - sleep 10
+    - sleep 30
     - docker exec -i Users_Service pytest tests
     - docker-compose down

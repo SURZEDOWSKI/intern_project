@@ -22,6 +22,8 @@ test:
     #- poetry config virtualenvs.create false && poetry install
     - export DOCKER_HOST=tcp://docker:2375 && docker build -t my_fastapi -f dockerfile .
     - docker-compose up -d
-    - sleep 10
+    - uvicorn main:app --host 0.0.0.0 --port 80
+    - docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' Users_Service
+    - sleep 5
     - docker exec Users_Service pytest tests
     - docker-compose down

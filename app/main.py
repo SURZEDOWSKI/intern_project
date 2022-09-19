@@ -39,6 +39,7 @@ class UserUpdate(UserWithoutId):
 
 connection_string = "postgresql://postgres:pass@172.18.0.2:5432/postgres"  # use Postgres:5432 to run localy
 
+
 engine = create_engine(connection_string, echo=True)
 
 
@@ -61,42 +62,15 @@ def remove_response(key):
     return r
 
 
-def create_users():
-    user_1 = User(
-        country="PL",
-        dateOfBirth="1999.08.06",
-        firstName="Szymon",
-        lastName="Urzedowski",
-        nickname="Wazon",
-        gender="male",
-        email="szymon@gmail.com",
-    )
-    user_2 = User(
-        country="US",
-        dateOfBirth="1990.08.10",
-        firstName="John",
-        lastName="Smith",
-        nickname="Jonny",
-        gender="male",
-        email="john@gmail.com",
-    )
-    user_3 = User(
-        country="UK",
-        dateOfBirth="2000.08.19",
-        firstName="Scott",
-        lastName="Looker",
-        nickname="Scotty",
-        gender="male",
-        email="scott@gmail.com",
-    )
-
+def get_users_by_id(user_id):
     with Session(engine) as session:
-
-        session.add(user_1)
-        session.add(user_2)
-        session.add(user_3)
-
-        session.commit()
+        statement = "SELECT * FROM users WHERE id in ("
+        statement += ", ".join(str(i) for i in user_id)
+        statement += ")"
+        users = session.exec(statement).all()
+        if not users:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        return users
 
 
 def get_user_by_nickname(nickname):
@@ -211,17 +185,6 @@ async def delete_user(user_id: int):
         session.delete(users)
         session.commit()
         raise HTTPException(status.HTTP_200_OK)
-
-
-def get_users_by_id(user_id):
-    with Session(engine) as session:
-        statement = "SELECT * FROM users WHERE id in ("
-        statement += ", ".join(str(i) for i in user_id)
-        statement += ")"
-        users = session.exec(statement).all()
-        if not users:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-        return users
 
 
 @app.get("/v1/users", responses=resp)

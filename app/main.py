@@ -64,10 +64,7 @@ def remove_response(key):
 
 def get_users_by_id(user_id):
     with Session(engine) as session:
-        statement = "SELECT * FROM users WHERE id in ("
-        statement += ", ".join(str(i) for i in user_id)
-        statement += ")"
-        users = session.exec(statement).all()
+        users = session.exec(statement=select(User).where(User.id.in_(user_id))).all()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         return users
@@ -75,10 +72,9 @@ def get_users_by_id(user_id):
 
 def get_user_by_nickname(nickname):
     with Session(engine) as session:
-        statement = "SELECT * FROM users WHERE nickname LIKE '"
-        statement += nickname
-        statement += "%'"
-        users = session.exec(statement).all()
+        users = session.exec(
+            statement=select(User).where(User.nickname.like(nickname + "%"))
+        ).all()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         return users
@@ -86,10 +82,9 @@ def get_user_by_nickname(nickname):
 
 def get_user_by_email(email):
     with Session(engine) as session:
-        statement = "SELECT * FROM users WHERE email LIKE '"
-        statement += email
-        statement += "%'"
-        users = session.exec(statement).all()
+        users = session.exec(
+            statement=select(User).where(User.email.like(email + "%"))
+        ).all()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         return users

@@ -1,7 +1,12 @@
+from contextlib import redirect_stderr
+import email
 from typing import List, Optional
-from fastapi import FastAPI, status, HTTPException, Query
+from fastapi import FastAPI, status, HTTPException, Query, Request, Response
+from fastapi.encoders import jsonable_encoder
+from fastapi_redis_cache import FastApiRedisCache, cache
 from pydantic import BaseModel
-
+import redis
+import json
 from sqlmodel import SQLModel, create_engine, Field, Session, select, delete
 
 
@@ -37,10 +42,12 @@ class UserUpdate(UserWithoutId):
     email: Optional[str] = None
 
 
-connection_string = "postgresql://postgres:pass@172.18.0.2:5432/postgres"  # use Postgres:5432 to run localy
+POSTGRES_CONNECTION_STRING = "postgresql://postgres:pass@172.18.0.2:5432/postgres"  # use Postgres:5432 to run localy
+#POSTGRES_CONNECTION_STRING = "postgresql://postgres:pass@Postgres:5432/postgres"  # use Postgres:5432 to run localy
 
+REDIS_CONNECTION_STRING ="redis://Redis:6379"
 
-engine = create_engine(connection_string, echo=True)
+engine = create_engine(POSTGRES_CONNECTION_STRING, echo=True)
 
 
 def create_tables():
@@ -67,26 +74,29 @@ def get_users_by_id(user_id):
         users = session.exec(statement=select(User).where(User.id.in_(user_id))).all()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        users = jsonable_encoder(users)
         return users
 
 
 def get_user_by_nickname(nickname):
     with Session(engine) as session:
         users = session.exec(
-            statement=select(User).where(User.nickname.like(nickname + "%"))
+            statement=select(User).where(User.nickname==nickname)
         ).all()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        users = jsonable_encoder(users)
         return users
 
 
 def get_user_by_email(email):
     with Session(engine) as session:
         users = session.exec(
-            statement=select(User).where(User.email.like(email + "%"))
+            statement=select(User).where(User.email==email)
         ).all()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        users = jsonable_encoder(users)
         return users
 
 
@@ -95,6 +105,7 @@ def get_all_users():
         users = session.exec(statement=select(User).order_by(User.id)).all()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        users = jsonable_encoder(users)
         return users
 
 
@@ -117,7 +128,15 @@ app = FastAPI(
 async def on_startup():
     with Session(engine) as session:
         create_tables()
+    cache = FastApiRedisCache()
+    cache.init(
+    host_url=REDIS_CONNECTION_STRING,
+    prefix="cache",
+    response_header="X-Cache",
+    ignore_arg_types=[Request, Response, Session]
+    )
 
+r=redis.Redis(host="Redis", port="6379")
 
 @app.on_event("shutdown")
 def on_shutdown():
@@ -143,17 +162,25 @@ async def create_user(user: UserWithoutId):
         session.add(db_user)
         session.commit()
         session.refresh(db_user)
+
+        keys = r.keys('*')
+        print(keys)
+        if keys:
+            r.delete(*keys)
+       
         return db_user
 
 
 @app.get("/v1/users/{user_id}", response_model=UserRead, responses=resp)
-async def get_user(user_id: int):
+@cache(expire=30)
+async def get_user(user_id: int, response: Response):
     with Session(engine) as session:
-        users = session.exec(statement=select(User).where(User.id == user_id)).first()
+        users = session.get(User, user_id)
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-        print(users)
-    return users
+        users = jsonable_encoder(users)
+        print(r.get(f"cache:main.get_user(user_id={user_id})"))
+        return users
 
 
 @app.put("/v1/users/{user_id}", response_model=UserRead, responses=resp)
@@ -168,6 +195,19 @@ async def edit_user(user_id: int, user: UserUpdate):
         session.add(db_user)
         session.commit()
         session.refresh(db_user)
+        
+        #keys = r.keys('*')
+        #print(keys)
+        keys_none = r.keys(f"*user_id=None, nickname=None, email=None*")
+        keys_by_id = r.keys(f"*user_id=*{db_user.id}*")
+        keys_by_nickname = r.keys(f"*nickname={db_user.nickname}*")
+        keys_by_email = r.keys(f"*email={db_user.email}*")
+        keys=keys_none+keys_by_id+keys_by_nickname+keys_by_email
+
+        if keys:
+            r.delete(*keys)
+        keys = r.keys('*')
+
         return db_user
 
 
@@ -179,14 +219,26 @@ async def delete_user(user_id: int):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         session.delete(users)
         session.commit()
+        
+        keys_none = r.keys(f"*user_id=None, nickname=None, email=None*")
+        keys_by_id = r.keys(f"*user_id=*{users.id}*")
+        keys_by_nickname = r.keys(f"*nickname={users.nickname}*")
+        keys_by_email = r.keys(f"*email={users.email}*")
+        keys=keys_none+keys_by_id+keys_by_nickname+keys_by_email
+
+        if keys:
+            r.delete(*keys)
+        keys = r.keys('*')
+
         raise HTTPException(status.HTTP_200_OK)
 
 
 @app.get("/v1/users", responses=resp)
-async def find_user(
+@cache(expire=30)
+async def find_user(response: Response,
     user_id: List[int] | None = Query(default=None),
-    nickname: str | None = None,
-    email: str | None = None,
+    nickname: str | None = Query(default=None),
+    email: str | None = Query(default=None),
 ):
     parameters = num_of_params(user_id, nickname, email)
     if parameters == 0:

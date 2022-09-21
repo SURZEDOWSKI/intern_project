@@ -24,6 +24,7 @@ test:
     - docker-compose up -d
     - docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' Users_Service
     - docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' postgres
+    - docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis
     - sleep 5
     - docker exec Users_Service pytest tests
     - docker-compose down

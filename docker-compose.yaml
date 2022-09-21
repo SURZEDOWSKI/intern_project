@@ -11,8 +11,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - Postgres
-#      Postgres:
-#        condition: service_healthy
+      - Redis
     networks:
       - my_network
     ports:
@@ -28,16 +27,23 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: postgres
+      REDIS_HOST: cache
+      REDIS_PORT: 6379
     networks:
       - my_network
     ports:
       - "5432:5432"
 
-    #healthcheck:
-    #  test: ["CMD-SHELL", "pg_isready -U postgres"]
-    #  interval: 5s
-    #  timeout: 5s
-    #  retries: 5
+  Redis:
+    container_name: redis
+    image: redis
+    restart: always
+    command: ["redis-server", "--bind", "redis", "--port", "6379"]
+    networks: 
+      - my_network
+    ports:
+      - "6379:6379"
+    
 
   #PGAdmin:
   #  container_name: pgadmin
@@ -52,5 +58,5 @@ services:
   #    - "5050:80"
 networks:
   my_network:
-    #name: my_network
+    name: my_network
     driver: bridge

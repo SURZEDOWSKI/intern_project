@@ -13,7 +13,8 @@ def test_db_connection():
         conn = psycopg2.connect(
             dbname="postgres",
             user="postgres",
-            host="172.18.0.2",
+            #host="172.18.0.2",
+            host="Postgres",
             password="pass",
             port="5432",
         )

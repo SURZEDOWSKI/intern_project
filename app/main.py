@@ -42,8 +42,8 @@ class UserUpdate(UserWithoutId):
     email: Optional[str] = None
 
 
-POSTGRES_CONNECTION_STRING = "postgresql://postgres:pass@172.18.0.2:5432/postgres"  # use Postgres:5432 to run localy
-#POSTGRES_CONNECTION_STRING = "postgresql://postgres:pass@Postgres:5432/postgres"  # use Postgres:5432 to run localy
+#POSTGRES_CONNECTION_STRING = "postgresql://postgres:pass@172.18.0.2:5432/postgres"  # use Postgres:5432 to run localy
+POSTGRES_CONNECTION_STRING = "postgresql://postgres:pass@Postgres:5432/postgres"  # use Postgres:5432 to run localy
 
 REDIS_CONNECTION_STRING ="redis://Redis:6379"
 

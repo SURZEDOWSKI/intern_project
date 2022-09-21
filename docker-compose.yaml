@@ -58,5 +58,5 @@ services:
   #    - "5050:80"
 networks:
   my_network:
-    name: my_network
+    #name: my_network
     driver: bridge

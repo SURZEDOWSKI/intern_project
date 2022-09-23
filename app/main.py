@@ -1,12 +1,12 @@
-from contextlib import redirect_stderr
-import email
 from typing import List, Optional
-from fastapi import FastAPI, status, HTTPException, Query, Request, Response
+from fastapi import FastAPI, status, HTTPException, Query, Request, Response, BackgroundTasks
 from fastapi.encoders import jsonable_encoder
 from fastapi_redis_cache import FastApiRedisCache, cache
 from pydantic import BaseModel
 import redis
 import json
+import asyncio
+import aio_pika
 from sqlmodel import SQLModel, create_engine, Field, Session, select, delete
 
 
@@ -40,6 +40,11 @@ class UserUpdate(UserWithoutId):
     nickname: Optional[str] = None
     gender: Optional[str] = None
     email: Optional[str] = None
+
+
+class UserEvent(BaseModel):
+    action_type:str
+    user: dict
 
 
 #POSTGRES_CONNECTION_STRING = "postgresql://postgres:pass@172.18.0.2:5432/postgres"  # use Postgres:5432 to run localy
@@ -124,6 +129,19 @@ app = FastAPI(
 )
 
 
+async def publish_message(msg):
+    connection = await aio_pika.connect('amqp://guest:guest@Rabbitmq')
+
+    async with connection:
+        q_name ='users_queue'
+
+        channel = await connection.channel()
+        await channel.declare_queue(q_name, auto_delete=True)
+
+        message = aio_pika.Message(body=json.dumps(msg.dict()).encode())
+        await channel.default_exchange.publish(message, routing_key=q_name)
+
+
 @app.on_event("startup")
 async def on_startup():
     with Session(engine) as session:
@@ -156,7 +174,7 @@ def read_root():
     response_model=UserRead,
     responses=remove_response(status.HTTP_404_NOT_FOUND),
 )
-async def create_user(user: UserWithoutId):
+async def create_user(user: UserWithoutId, bg_tasks: BackgroundTasks):
     with Session(engine) as session:
         db_user = User.from_orm(user)
         session.add(db_user)
@@ -164,11 +182,13 @@ async def create_user(user: UserWithoutId):
         session.refresh(db_user)
 
         keys = r.keys('*')
-        print(keys)
         if keys:
             r.delete(*keys)
-       
-        return db_user
+        
+    user_event = UserEvent(action_type="user created", user=db_user.dict())
+    bg_tasks.add_task(publish_message, user_event)
+
+    return db_user
 
 
 @app.get("/v1/users/{user_id}", response_model=UserRead, responses=resp)
@@ -184,7 +204,7 @@ async def get_user(user_id: int, response: Response):
 
 
 @app.put("/v1/users/{user_id}", response_model=UserRead, responses=resp)
-async def edit_user(user_id: int, user: UserUpdate):
+async def edit_user(user_id: int, user: UserUpdate, bg_tasks: BackgroundTasks):
     with Session(engine) as session:
         db_user = session.get(User, user_id)
         if not db_user:
@@ -206,13 +226,15 @@ async def edit_user(user_id: int, user: UserUpdate):
 
         if keys:
             r.delete(*keys)
-        keys = r.keys('*')
 
-        return db_user
+    user_event = UserEvent(action_type="user edited", user=db_user.dict())
+    bg_tasks.add_task(publish_message, user_event)
+
+    return db_user
 
 
 @app.delete("/v1/users/{user_id}", responses=resp)
-async def delete_user(user_id: int):
+async def delete_user(user_id: int, bg_tasks: BackgroundTasks):
     with Session(engine) as session:
         users = session.exec(statement=select(User).where(User.id == user_id)).first()
         if not users:
@@ -228,10 +250,14 @@ async def delete_user(user_id: int):
 
         if keys:
             r.delete(*keys)
-        keys = r.keys('*')
 
-        raise HTTPException(status.HTTP_200_OK)
-
+    print(users.dict())
+    user_event = UserEvent(action_type="user deleted", user=users.dict())
+    bg_tasks.add_task(publish_message, user_event)
+    print(users.dict())
+    
+    #raise HTTPException(status.HTTP_200_OK)
+    return HTTPException(status.HTTP_200_OK)
 
 @app.get("/v1/users", responses=resp)
 @cache(expire=30)

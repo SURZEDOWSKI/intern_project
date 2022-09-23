@@ -12,7 +12,6 @@ services:
     depends_on:
       - Postgres
       - Redis
-      - Rabbitmq
     networks:
       - my_network
     ports:

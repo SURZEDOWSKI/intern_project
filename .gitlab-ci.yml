@@ -14,18 +14,13 @@ test:
     entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]
   
 
-  #variables: 
-  #  DOCKER_TLS_CERTDIR: "/certs"
   script:
-    #- pip install poetry
-    #- cd app
-    #- poetry config virtualenvs.create false && poetry install
     - export DOCKER_HOST=tcp://docker:2375 && docker build -t my_fastapi -f dockerfile .
     - docker-compose up -d
     - docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' Users_Service
     - docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' postgres
     - docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis
     - docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' rabbitmq
-    - sleep 5
-    - while !</dev/tcp/Rabbitmq/5672; do sleep 1; done; docker exec Users_Service pytest tests
+    - sleep 30
+    - docker exec Users_Service pytest tests
     - docker-compose down

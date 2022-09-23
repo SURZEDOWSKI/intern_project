@@ -2,8 +2,6 @@ version: "3"
 services:
   Users:
     container_name: Users_Service
-    #command: bash -c 'while !</dev/tcp/Postgres/5432; do sleep 1; done; sleep 5; pytest tests; uvicorn main:app --host 0.0.0.0 --port 80'
-    #command: bash -c 'while !</dev/tcp/172.18.0.3/5432; do sleep 1; done; uvicorn main:app --host 0.0.0.0 --port 80'
     command: bash -c 'while !</dev/tcp/Postgres/5432; do sleep 1; done; uvicorn main:app --host 0.0.0.0 --port 80'
     image: my_fastapi
     build:
@@ -67,5 +65,4 @@ services:
 
 networks:
   my_network:
-    #name: my_network
     driver: bridge

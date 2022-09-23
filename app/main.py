@@ -1,11 +1,18 @@
 from typing import List, Optional
-from fastapi import FastAPI, status, HTTPException, Query, Request, Response, BackgroundTasks
+from fastapi import (
+    FastAPI,
+    status,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    BackgroundTasks,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi_redis_cache import FastApiRedisCache, cache
 from pydantic import BaseModel
 import redis
 import json
-import asyncio
 import aio_pika
 from sqlmodel import SQLModel, create_engine, Field, Session, select, delete
 
@@ -43,16 +50,17 @@ class UserUpdate(UserWithoutId):
 
 
 class UserEvent(BaseModel):
-    action_type:str
+    action_type: str
     user: dict
 
 
-#POSTGRES_CONNECTION_STRING = "postgresql://postgres:pass@172.18.0.2:5432/postgres"  # use Postgres:5432 to run localy
-POSTGRES_CONNECTION_STRING = "postgresql://postgres:pass@Postgres:5432/postgres"  # use Postgres:5432 to run localy
+POSTGRES_CONNECTION_STRING = "postgresql://postgres:pass@Postgres:5432/postgres"
 
-REDIS_CONNECTION_STRING ="redis://Redis:6379"
+REDIS_CONNECTION_STRING = "redis://Redis:6379"
 
 engine = create_engine(POSTGRES_CONNECTION_STRING, echo=True)
+
+r = redis.Redis(host="Redis", port="6379")
 
 
 def create_tables():
@@ -86,7 +94,7 @@ def get_users_by_id(user_id):
 def get_user_by_nickname(nickname):
     with Session(engine) as session:
         users = session.exec(
-            statement=select(User).where(User.nickname==nickname)
+            statement=select(User).where(User.nickname == nickname)
         ).all()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -96,9 +104,7 @@ def get_user_by_nickname(nickname):
 
 def get_user_by_email(email):
     with Session(engine) as session:
-        users = session.exec(
-            statement=select(User).where(User.email==email)
-        ).all()
+        users = session.exec(statement=select(User).where(User.email == email)).all()
         if not users:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         users = jsonable_encoder(users)
@@ -130,10 +136,10 @@ app = FastAPI(
 
 
 async def publish_message(msg):
-    connection = await aio_pika.connect('amqp://guest:guest@Rabbitmq')
+    connection = await aio_pika.connect("amqp://guest:guest@Rabbitmq")
 
     async with connection:
-        q_name ='users_queue'
+        q_name = "users_queue"
 
         channel = await connection.channel()
         await channel.declare_queue(q_name, auto_delete=True)
@@ -148,13 +154,12 @@ async def on_startup():
         create_tables()
     cache = FastApiRedisCache()
     cache.init(
-    host_url=REDIS_CONNECTION_STRING,
-    prefix="cache",
-    response_header="X-Cache",
-    ignore_arg_types=[Request, Response, Session]
+        host_url=REDIS_CONNECTION_STRING,
+        prefix="cache",
+        response_header="X-Cache",
+        ignore_arg_types=[Request, Response, Session],
     )
 
-r=redis.Redis(host="Redis", port="6379")
 
 @app.on_event("shutdown")
 def on_shutdown():
@@ -181,10 +186,10 @@ async def create_user(user: UserWithoutId, bg_tasks: BackgroundTasks):
         session.commit()
         session.refresh(db_user)
 
-        keys = r.keys('*')
+        keys = r.keys("*")
         if keys:
             r.delete(*keys)
-        
+
     user_event = UserEvent(action_type="user created", user=db_user.dict())
     bg_tasks.add_task(publish_message, user_event)
 
@@ -215,14 +220,12 @@ async def edit_user(user_id: int, user: UserUpdate, bg_tasks: BackgroundTasks):
         session.add(db_user)
         session.commit()
         session.refresh(db_user)
-        
-        #keys = r.keys('*')
-        #print(keys)
+
         keys_none = r.keys(f"*user_id=None, nickname=None, email=None*")
         keys_by_id = r.keys(f"*user_id=*{db_user.id}*")
         keys_by_nickname = r.keys(f"*nickname={db_user.nickname}*")
         keys_by_email = r.keys(f"*email={db_user.email}*")
-        keys=keys_none+keys_by_id+keys_by_nickname+keys_by_email
+        keys = keys_none + keys_by_id + keys_by_nickname + keys_by_email
 
         if keys:
             r.delete(*keys)
@@ -241,12 +244,12 @@ async def delete_user(user_id: int, bg_tasks: BackgroundTasks):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         session.delete(users)
         session.commit()
-        
+
         keys_none = r.keys(f"*user_id=None, nickname=None, email=None*")
         keys_by_id = r.keys(f"*user_id=*{users.id}*")
         keys_by_nickname = r.keys(f"*nickname={users.nickname}*")
         keys_by_email = r.keys(f"*email={users.email}*")
-        keys=keys_none+keys_by_id+keys_by_nickname+keys_by_email
+        keys = keys_none + keys_by_id + keys_by_nickname + keys_by_email
 
         if keys:
             r.delete(*keys)
@@ -255,13 +258,14 @@ async def delete_user(user_id: int, bg_tasks: BackgroundTasks):
     user_event = UserEvent(action_type="user deleted", user=users.dict())
     bg_tasks.add_task(publish_message, user_event)
     print(users.dict())
-    
-    #raise HTTPException(status.HTTP_200_OK)
+
     return HTTPException(status.HTTP_200_OK)
+
 
 @app.get("/v1/users", responses=resp)
 @cache(expire=30)
-async def find_user(response: Response,
+async def find_user(
+    response: Response,
     user_id: List[int] | None = Query(default=None),
     nickname: str | None = Query(default=None),
     email: str | None = Query(default=None),

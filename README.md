@@ -1,3 +1,11 @@
+## This is one of the projects I worked on during my internship at Capgemini Engineering
+- [x] It's a simple **REST Api** built using **FastAPI**, with documentation and covered in tests using **Pytest**.
+- [x] To maintain this project I was using **GitLab**, and using it's CI/CD functionality created a simple **pipeline** and **githooks**.
+- [x] It has integrated **PostgreSQL database, RabbitMQ communication and Redis cache**.
+- [x] All dependencies are managed by **poetry**.
+- [x] Whole app is operating using **docker**, running docker-compose will automatically download, install and run the app on localhost.
+
+
 ## WORKFLOW:
 - Pull
 - Create short-lived branch
@@ -7,6 +15,20 @@
 - Code review
 - Merge
 
+##### Task 10:
+- [x] Added **RabbitMQ communication**
+
+##### Task 9:
+- [x] Added **Redis cache**
+
+##### Task 8:
+- [x] Added **PostgreSQL database**
+
+##### Task 7:
+- [x] Created **GitLab CI/CD pipeline**
+
+##### Task 6:
+- [x] Dockerized the whole project
 
 ##### Task 5:
 - [x] Used **Poetry** to create **pyproject.toml** and **poetry.lock** in *.\szymon-urzedowski* with virtual environment dependencies
